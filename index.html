@@ -6,11 +6,22 @@
     <title>Drowse</title>
 
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Kavivanar|Roboto+Mono">
     <link rel="stylesheet" href="assets/css/main.css" type="text/css">
   </head>
   <body>
-    <canvas id="game"></canvas>
+    <div id="content">
+      <div id="title" class="overlay">
+        Drowse
+        <div id="subtitle" class="overlay">
+          By Sanjay Kannan
+        </div>
+      </div>
+      <canvas id="game" />
+    </div>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+    <script src="assets/js/jquery.flicker.js" type="text/javascript"></script>
     <script src="assets/js/main.js" type="text/javascript"></script>
   </body>
 </html>

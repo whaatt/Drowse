@@ -1,12 +1,13 @@
+'use strict';
 class RoadLine {
   constructor(position) {
-    this.position = position % 100.0;
+    this.position = position;
     this.length = 2.0 + this.position / 100.0 * 16;
     this.color = 'rgba(150, 150, 0, 0.4)';
   }
 
-  advanceTick() {
-    this.position = (0.1 + this.position * 1.005) % 100.0;
+  advance(alpha) {
+    this.position += alpha * (0.1 + this.position * 1.005 - this.position);
     this.length = 2.0 + this.position / 100.0 * 16;
   }
 
@@ -61,26 +62,30 @@ class RoadLine {
 class Road {
   constructor(canvas, context) {
     this.renderLoop = setInterval(() => null);
-    this.roadLines = [new RoadLine(1),
-                      new RoadLine(5),
-                      new RoadLine(15),
-                      new RoadLine(24),
-                      new RoadLine(37),
-                      new RoadLine(50)];
+    this.roadLines = [new RoadLine(2),
+                      new RoadLine(9),
+                      new RoadLine(18),
+                      new RoadLine(32),
+                      new RoadLine(53),
+                      new RoadLine(79)];
 
     this.canvas = canvas;
     this.context = context;
   }
 
-  runAtSpeed(milesPerHour) {
-    clearInterval(this.renderLoop);
-    this.renderLoop = setInterval(() => {
-      // Easy way to erase all lines rendered on screen.
-      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.roadLines.forEach(roadLine =>
-        roadLine.render(this.canvas, this.context));
-      this.roadLines.forEach(roadLine => roadLine.advanceTick());
-    }, 1.0 / (milesPerHour * milesPerHour) * 8000.0);
+  render(milesPerHour) {
+    // Easy way to erase all lines rendered on screen.
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.roadLines.forEach(roadLine =>
+      roadLine.render(this.canvas, this.context));
+    this.roadLines.forEach(roadLine =>
+      roadLine.advance(milesPerHour / 12.0));
+    // Some hacky shit to make the road lines not catch up to each other.
+    if (this.roadLines[this.roadLines.length - 1].position > 100.0)
+      this.roadLines.pop();
+    if (this.roadLines[0].position > 9.0)
+      this.roadLines.unshift(new RoadLine(2));
+    requestAnimationFrame(() => this.render(milesPerHour));
   }
 
   flickerRandom(color, time) {
@@ -97,10 +102,22 @@ $(document).ready(() => {
   function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    const aspect = canvas.width * 1.0 / canvas.height;
+
+    $('#title').css({
+      top: canvas.height * 0.005 * aspect,
+      left: canvas.width * 0.0075,
+      'font-size': canvas.width * 0.025
+    });
+
+    $('#subtitle').css({
+      'font-size': canvas.width * 0.0085,
+      'margin-top': -canvas.height * 0.01
+    });
   }
 
   $(window).resize(resizeCanvas);
   resizeCanvas(); // Once on load.
   const road = new Road(canvas, context);
-  road.runAtSpeed(30.0);
+  road.render(10.0);
 });
