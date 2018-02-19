@@ -102,24 +102,38 @@ class Message /* implements Playable */ {
     this.doType = doType;
   }
 
-  play(DOM) {
-    DOM.call.html('')
+  start(DOM) {
+    this.doStop = false;
     DOM.stats.hide();
     const messagePlayer = (index) => {
+      if (this.doStop)
+        return;
       if (index < this.messages.length) {
         setTimeout(() => {
           if (this.doType) {
-            DOM.call
-              .html('')
-              .on('end_type.typist', () => {
+            // Hide all the children elements, showing them one-by-one.
+            DOM.call.html(this.messages[index]).children('.type').hide();
+            const children = DOM.call.children('.type')
+            const childrenPlayer = (childIndex) => {
+              if (childIndex < children.length) {
+                const text = children.eq(childIndex).html();
+                children.eq(childIndex).html('').show()
+                  .on('end_type.typist', () => {
+                    children.eq(childIndex).off('end_type.typist');
+                    childrenPlayer(childIndex + 1);
+                  })
+                  .typist({
+                    text: text,
+                    cursor: false,
+                    speed: 12
+                  })
+              } else {
                 messagePlayer(index + 1);
-                DOM.call.off('end_type.typist');
-              })
-              .typist({
-                text: this.messages[index],
-                cursor: false,
-                speed: 12
-              })
+              }
+            }
+
+            // Recursively type children.
+            childrenPlayer(0);
           } else {
             DOM.call.html(this.messages[index]);
             messagePlayer(index + 1);
@@ -131,6 +145,10 @@ class Message /* implements Playable */ {
     // Recursively play messages.
     messagePlayer(0);
   }
+
+  stop(/* unused */ DOM) {
+    this.doStop = true;
+  }
 }
 
 class Player {
@@ -138,39 +156,89 @@ class Player {
     if (playables.length === 0)
       throw new Error('no playables provided');
     this.playables = playables;
-    this.index = 0;
+    this.index = -1;
     this.DOM = DOM;
 
-    // Gray out previous to start with.
-    this.DOM.less.css({ color: '#333333' });
-    this.DOM.greater.css({ color: 'white' });
+    // Back button.
+    this.DOM.less
+      .attr('disabled', true)
+      .css({ color: '#333333' })
+      .hide();
+
+    // Forward button.
+    this.DOM.greater
+      .attr('disabled', false)
+      .css({ color: 'white' })
+      .hide();
+
+    this.DOM.document.on('click', '.previous', () => this.previous(true));
+    this.DOM.document.on('click', '.next', () => this.next(true));
+
+    // Case with one playable.
+    this.next(false);
   }
 
-  play() {
-    this.playables[this.index].play(this.DOM)
+  start() {
+    this.playables[this.index].start(this.DOM)
   }
 
-  previous(noAuto) {
+  stop() {
+    this.playables[this.index].stop(this.DOM)
+  }
+
+  previous(auto) {
     if (this.index > 0) {
-      ++this.index;
+      if (auto)
+        this.stop();
+      --this.index;
       if (this.index == 0)
-        this.DOM.less.css({ color: '#333333' });
+        this.DOM.less
+          .off('click')
+          .attr('disabled', true)
+          .css({ color: '#333333' });
       if (this.index < this.playables.length - 1)
-        this.DOM.greater.css({ color: 'white' });
-      if (!noAuto)
-        this.play();
+        this.DOM.greater
+          .on('click', () => this.next(true))
+          .attr('disabled', false)
+          .css({ color: 'white' });
+      if (auto)
+        this.start();
     }
   }
 
-  next(noAuto) {
+  next(auto) {
     if (this.index < this.playables.length - 1) {
+      if (auto)
+        this.stop();
       ++this.index;
       if (this.index > 0)
-        this.DOM.less.css({ color: 'white' });
-      if (this.index == this.playables.length - 1)
-        this.DOM.greater.css({ color: '#333333' });
-      if (!noAuto)
-        this.play();
+        this.DOM.less
+          .on('click', () => this.previous(true))
+          .attr('disabled', false)
+          .css({ color: 'white' });
+      if (this.index == this.playables.length - 1) {
+        this.DOM.greater
+          .off('click')
+          .attr('disabled', true)
+          .css({ color: '#333333' })
+          .show();
+        this.DOM.less.show();
+        const that = this;
+        this.DOM.document.keydown((e) => {
+          const arrow = {left: 37, up: 38, right: 39, down: 40};
+          switch (e.keyCode) {
+            case arrow.left:
+              that.previous(true);
+            break;
+            case arrow.right:
+              that.next(true);
+            break;
+          }
+        });
+      }
+
+      if (auto)
+        this.start();
     }
   }
 }
@@ -219,6 +287,7 @@ $(document).ready(() => {
   }
 
   const DOM = {
+    document: $(document),
     road: new Road(canvas, context),
     screen: $('#content'),
     call: $('#call'),
@@ -234,10 +303,17 @@ $(document).ready(() => {
 
   const player = new Player([
     new Message([
-      'Every year, millions of people die from drowsy driving.',
-      'Don\'t become yet another fatal statistic. Get some sleep.'
+      '<a href="javascript: void(0);" class="next">Click to start.</a>'
+    ], 0, false),
+    new Message([
+      '<span class="type">' +
+        'Every year, millions of people die from drowsy driving.' +
+      '</span>',
+      '<span class="type">' +
+        'Don\'t become yet another fatal statistic. Get some sleep.' +
+      '</span>'
     ], 400, true)
   ], DOM)
 
-  player.play();
+  player.start();
 });

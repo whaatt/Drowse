@@ -38,3 +38,12 @@ body, html {
   width: 80%;
   transform: translate(-50%, 0);
 }
+
+a {
+  outline: none;
+  text-decoration: none;
+}
+
+.next {
+  color: lightgreen;
+}
