@@ -16,6 +16,7 @@ body, html {
 }
 
 .overlay {
+  font-family: 'Roboto Mono', monospace;
   position: absolute;
   color: white;
   z-index: 10;
@@ -26,7 +27,14 @@ body, html {
 }
 
 #subtitle {
-  font-size: 14px;
-  position: relative;
   font-family: 'Roboto Mono', monospace;
+  position: relative;
+}
+
+#call {
+  text-align: center;
+  left: 50%;
+  top: 12%;
+  width: 80%;
+  transform: translate(-50%, 0);
 }

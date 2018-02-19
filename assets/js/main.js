@@ -95,6 +95,86 @@ class Road {
   }
 }
 
+class Message /* implements Playable */ {
+  constructor(messages, delay, doType) {
+    this.messages = messages;
+    this.delay = delay;
+    this.doType = doType;
+  }
+
+  play(DOM) {
+    DOM.call.html('')
+    DOM.stats.hide();
+    const messagePlayer = (index) => {
+      if (index < this.messages.length) {
+        setTimeout(() => {
+          if (this.doType) {
+            DOM.call
+              .html('')
+              .on('end_type.typist', () => {
+                messagePlayer(index + 1);
+                DOM.call.off('end_type.typist');
+              })
+              .typist({
+                text: this.messages[index],
+                cursor: false,
+                speed: 12
+              })
+          } else {
+            DOM.call.html(this.messages[index]);
+            messagePlayer(index + 1);
+          }
+        }, index === 0 ? 0 : this.delay);
+      }
+    };
+
+    // Recursively play messages.
+    messagePlayer(0);
+  }
+}
+
+class Player {
+  constructor(playables, DOM) {
+    if (playables.length === 0)
+      throw new Error('no playables provided');
+    this.playables = playables;
+    this.index = 0;
+    this.DOM = DOM;
+
+    // Gray out previous to start with.
+    this.DOM.less.css({ color: '#333333' });
+    this.DOM.greater.css({ color: 'white' });
+  }
+
+  play() {
+    this.playables[this.index].play(this.DOM)
+  }
+
+  previous(noAuto) {
+    if (this.index > 0) {
+      ++this.index;
+      if (this.index == 0)
+        this.DOM.less.css({ color: '#333333' });
+      if (this.index < this.playables.length - 1)
+        this.DOM.greater.css({ color: 'white' });
+      if (!noAuto)
+        this.play();
+    }
+  }
+
+  next(noAuto) {
+    if (this.index < this.playables.length - 1) {
+      ++this.index;
+      if (this.index > 0)
+        this.DOM.less.css({ color: 'white' });
+      if (this.index == this.playables.length - 1)
+        this.DOM.greater.css({ color: '#333333' });
+      if (!noAuto)
+        this.play();
+    }
+  }
+}
+
 $(document).ready(() => {
   const canvas = $('#game')[0];
   const context = canvas.getContext('2d');
@@ -105,19 +185,59 @@ $(document).ready(() => {
     const aspect = canvas.width * 1.0 / canvas.height;
 
     $('#title').css({
-      top: canvas.height * 0.005 * aspect,
-      left: canvas.width * 0.0075,
+      top: (aspect * 0.5).toString() + '%',
+      left: '0.75%',
       'font-size': canvas.width * 0.025
     });
 
     $('#subtitle').css({
       'font-size': canvas.width * 0.0085,
-      'margin-top': -canvas.height * 0.01
+      'margin-top': '-7.5%'
     });
+
+    $('#call').css({
+      'font-size': canvas.width * 0.035
+    });
+
+    $('#less').css({
+      bottom: (aspect * 0.5).toString() + '%',
+      left: '0.75%',
+      'font-size': canvas.width * 0.015
+    });
+
+    $('#greater').css({
+      bottom: (aspect * 0.5).toString() + '%',
+      right: '0.75%',
+      'font-size': canvas.width * 0.015
+    });
+
+    $('#stats').css({
+      top: (aspect * 0.5).toString() + '%',
+      right: '0.75%',
+      'font-size': canvas.width * 0.02
+    });
+  }
+
+  const DOM = {
+    road: new Road(canvas, context),
+    screen: $('#content'),
+    call: $('#call'),
+    stats: $('#stats'),
+    time: $('#time'),
+    less: $('#less'),
+    greater: $('#greater')
   }
 
   $(window).resize(resizeCanvas);
   resizeCanvas(); // Once on load.
-  const road = new Road(canvas, context);
-  road.render(10.0);
+  DOM.road.render(10.0);
+
+  const player = new Player([
+    new Message([
+      'Every year, millions of people die from drowsy driving.',
+      'Don\'t become yet another fatal statistic. Get some sleep.'
+    ], 400, true)
+  ], DOM)
+
+  player.play();
 });
