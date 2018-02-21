@@ -34,8 +34,8 @@ class RoadLine {
     const yP = hTop + rP / 100.0 * dH;
     const wP = (pMid - xP) * 2.0;
 
-    const xbP = wTop + (rP + rhP) / 100.0 * dW
-    const ybP = hTop + (rP + rhP) / 100.0 * dH
+    const xbP = wTop + (rP + rhP) / 100.0 * dW;
+    const ybP = hTop + (rP + rhP) / 100.0 * dH;
     const wbP = (pMid - xbP) * 2.0;
 
     const x = xP / 100.0 * canvas.width;
@@ -61,7 +61,7 @@ class RoadLine {
 
 class Road {
   constructor(canvas, context) {
-    this.renderLoop = setInterval(() => null);
+    this.rendering = false;
     this.roadLines = [new RoadLine(2),
                       new RoadLine(9),
                       new RoadLine(18),
@@ -73,19 +73,27 @@ class Road {
     this.context = context;
   }
 
-  render(milesPerHour) {
+  move(milesPerHour) {
+    this.milesPerHour = milesPerHour;
+    if (!this.rendering) {
+      this.rendering = true;
+      this.render();
+    }
+  }
+
+  render() {
     // Easy way to erase all lines rendered on screen.
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.roadLines.forEach(roadLine =>
       roadLine.render(this.canvas, this.context));
     this.roadLines.forEach(roadLine =>
-      roadLine.advance(milesPerHour / 12.0));
+      roadLine.advance(this.milesPerHour / 12.0));
     // Some hacky shit to make the road lines not catch up to each other.
     if (this.roadLines[this.roadLines.length - 1].position > 100.0)
       this.roadLines.pop();
     if (this.roadLines[0].position > 9.0)
       this.roadLines.unshift(new RoadLine(2));
-    requestAnimationFrame(() => this.render(milesPerHour));
+    requestAnimationFrame(() => this.render());
   }
 
   flickerRandom(color, time) {
@@ -96,10 +104,11 @@ class Road {
 }
 
 class Message /* implements Playable */ {
-  constructor(messages, delay, doType) {
+  constructor(messages, delay, doType, typeDelay) {
     this.messages = messages;
     this.delay = delay;
     this.doType = doType;
+    this.typeDelay = typeDelay;
   }
 
   start(DOM) {
@@ -113,8 +122,10 @@ class Message /* implements Playable */ {
           if (this.doType) {
             // Hide all the children elements, showing them one-by-one.
             DOM.call.html(this.messages[index]).children('.type').hide();
-            const children = DOM.call.children('.type')
+            const children = DOM.call.children('.type');
             const childrenPlayer = (childIndex) => {
+              if (this.doStop)
+                return;
               if (childIndex < children.length) {
                 const text = children.eq(childIndex).html();
                 children.eq(childIndex).html('').show()
@@ -125,8 +136,8 @@ class Message /* implements Playable */ {
                   .typist({
                     text: text,
                     cursor: false,
-                    speed: 12
-                  })
+                    speed: this.typeDelay
+                  });
               } else {
                 messagePlayer(index + 1);
               }
@@ -148,6 +159,123 @@ class Message /* implements Playable */ {
 
   stop(/* unused */ DOM) {
     this.doStop = true;
+  }
+}
+
+class Game /* implements Playable */ {
+  // TODO: Consider adding flicker color to the parameter list.
+  constructor(time, speed, reset, probMSE, flickerTime, flickerDelay,
+    flickerSpread) {
+    this.time = time;
+    this.speed = speed;
+    this.reset = reset;
+    this.probMSE = probMSE;
+
+    this.flickerTime = flickerTime;
+    this.flickerDelay = flickerDelay;
+    this.flickerSpread = flickerSpread;
+  }
+
+  start(DOM) {
+    this.doStop = false;
+    DOM.call.html('');
+    DOM.stats.show();
+    DOM.road.move(0);
+    DOM.time.html(this.time.toString());
+
+    let hits = 0;
+    let flickers = 0;
+    let started = false;
+
+    // Named spacebar handler.
+    this.spaceHandler = (e) => {
+      const spacebar = 32;
+      switch (e.keyCode) {
+        case spacebar:
+          ++hits;
+        break;
+      }
+    };
+
+    // Named click handler.
+    this.clickHandler = (e) => {
+      e.preventDefault();
+      ++hits;
+    };
+
+    const timer = (seconds) => {
+      clearTimeout(this.timerDelay);
+      this.timerDelay = setTimeout(() => {
+        if (this.doStop)
+          return;
+        if (seconds >= 3) {
+          if (!started) {
+            started = true;
+            DOM.call.html('');
+            DOM.document.on('keydown', this.spaceHandler);
+            DOM.document.on('click', this.clickHandler);
+
+            const flicker = () => {
+              clearTimeout(this.flickerLoop);
+              const delay = this.flickerDelay
+                + Math.random() * 2 * this.flickerSpread - this.flickerSpread;
+              DOM.road.flickerRandom('rgba(150, 0, 0, 0.4)', this.flickerTime);
+              this.flickerLoop = setTimeout(flicker, delay);
+              ++flickers;
+            };
+
+            // Start flickering.
+            flicker();
+
+            // Start microsleep.
+            DOM.screen.flicker({
+              minOpacity: 0,
+              maxOpacity: 0,
+              transition: 800,
+              delay: 600,
+              probability: this.probMSE
+            });
+          }
+
+          // Post-countdown; pre-finish.
+          if (this.time >= seconds - 3) {
+            DOM.road.move(this.speed);
+            DOM.time.html((this.time - seconds + 3).toString());
+          } else {
+            this.stop(DOM);
+            const error = +(Math.abs(hits * 1.0 / flickers - 1.0) * 100)
+              .toFixed(2);
+            DOM.call.html('There were <span class="actual">' +
+                          flickers.toString() + '</span> color changes. ' +
+                          'Your error rate was <span class="yours">' + error +
+                          '%</span>. <a href="javascript: void(0);" ' +
+                          'class="next">Continue.</a>');
+          }
+        } else {
+          // Countdown in center area.
+          DOM.call.html((3 - seconds).toString());
+        }
+        timer(seconds + 1);
+      }, seconds > 0 ? 1000 : 0);
+    };
+
+    // Recursive timer.
+    timer(0);
+  }
+
+  stop(/* unused */ DOM) {
+    this.doStop = true;
+
+    // Reset DOM state.
+    DOM.road.move(this.reset);
+    DOM.screen.flicker('stop');
+    DOM.screen.stop(true, true).css({ opacity: 1 }); // Jank...
+    DOM.document.off('keydown', this.spaceHandler);
+    DOM.document.off('click', this.clickHandler);
+
+    // Clear any timeouts.
+    clearTimeout(this.timerDelay);
+    clearTimeout(this.flickerLoop);
   }
 }
 
@@ -174,16 +302,28 @@ class Player {
     this.DOM.document.on('click', '.previous', () => this.previous(true));
     this.DOM.document.on('click', '.next', () => this.next(true));
 
+    this.arrowHandler = (e) => {
+      const arrow = {left: 37, up: 38, right: 39, down: 40};
+      switch (e.keyCode) {
+        case arrow.left:
+          this.previous(true);
+        break;
+        case arrow.right:
+          this.next(true);
+        break;
+      }
+    };
+
     // Case with one playable.
     this.next(false);
   }
 
   start() {
-    this.playables[this.index].start(this.DOM)
+    this.playables[this.index].start(this.DOM);
   }
 
   stop() {
-    this.playables[this.index].stop(this.DOM)
+    this.playables[this.index].stop(this.DOM);
   }
 
   previous(auto) {
@@ -224,17 +364,8 @@ class Player {
           .show();
         this.DOM.less.show();
         const that = this;
-        this.DOM.document.keydown((e) => {
-          const arrow = {left: 37, up: 38, right: 39, down: 40};
-          switch (e.keyCode) {
-            case arrow.left:
-              that.previous(true);
-            break;
-            case arrow.right:
-              that.next(true);
-            break;
-          }
-        });
+        this.DOM.document.off('keydown', this.arrowHandler);
+        this.DOM.document.on('keydown', this.arrowHandler);
       }
 
       if (auto)
@@ -253,7 +384,7 @@ $(document).ready(() => {
     const aspect = canvas.width * 1.0 / canvas.height;
 
     $('#title').css({
-      top: (aspect * 0.5).toString() + '%',
+      top: (aspect * 0.3).toString() + '%',
       left: '0.75%',
       'font-size': canvas.width * 0.025
     });
@@ -295,16 +426,17 @@ $(document).ready(() => {
     time: $('#time'),
     less: $('#less'),
     greater: $('#greater')
-  }
+  };
 
   $(window).resize(resizeCanvas);
   resizeCanvas(); // Once on load.
-  DOM.road.render(10.0);
+  DOM.road.move(0.0);
 
-  const player = new Player([
+  new Player([
     new Message([
       '<a href="javascript: void(0);" class="next">Click to start.</a>'
-    ], 0, false),
+    ], 0, false, 0),
+    new Game(20, 30.0, 0.0, 0.1, 250, 550, 200),
     new Message([
       '<span class="type">' +
         'Every year, millions of people die from drowsy driving.' +
@@ -312,8 +444,6 @@ $(document).ready(() => {
       '<span class="type">' +
         'Don\'t become yet another fatal statistic. Get some sleep.' +
       '</span>'
-    ], 400, true)
-  ], DOM)
-
-  player.start();
+    ], 1000, true, 8)
+  ], DOM).start();
 });

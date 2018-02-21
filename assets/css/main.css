@@ -47,3 +47,11 @@ a {
 .next {
   color: lightgreen;
 }
+
+.actual {
+  color: orange;
+}
+
+.yours {
+  color: violet;
+}
