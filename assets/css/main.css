@@ -57,14 +57,19 @@ a {
   background-color: rgba(213, 230, 188, 0.2);
 }
 
+.button.load {
+  border: 2px solid #AAAAAA;
+  color: lightgray;
+}
+
+.button.load:hover {
+  background-color: rgba(213, 230, 188, 0.1);
+}
+
 .actual {
   color: orange;
 }
 
 .yours {
   color: violet;
-}
-
-.red {
-  color: ;
 }

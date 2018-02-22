@@ -1,0 +1,28 @@
+Credits
+  Production
+    - Designed and produced by Sanjay Kannan (skalon@stanford.edu).
+    - This is a final project for Stanford PSYC 135 (Sleep and Dreams).
+    - Source code available at https://github.com/whaatt/Drowse.
+
+  References
+    Websites:
+      - https://blog.gwccnet.com/blog/decision-driving
+      - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2808128/
+      - https://en.wikipedia.org/wiki/Microsleep
+      - http://www.cnn.com/2009/TRAVEL/05/15/pilot.fatigue.buffalo.crash/
+      - https://link.springer.com/chapter/10.1007/978-3-642-03882-2_607
+      - https://www.cbsnews.com/news/aaa-study-drowsy-driving-dangers-comparable-to-drunk-driving/
+
+    Publications:
+      - National Highway Traffic Safety Administration.
+        Traffic Safety Facts Crash Stats: Drowsy Driving.
+        Washington, DC: DOT; 2011. DOT HS 811 4492011.
+
+  Media
+    Images:
+      - The Iceland background is a royalty-free image.
+      - The road was edited to remove the center line.
+
+    Audio:
+      - 5:54 AM (Dawn) by Ross Bugden
+      - https://www.youtube.com/watch?v=ZKYP5HOjng0

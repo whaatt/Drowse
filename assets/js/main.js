@@ -114,23 +114,21 @@ class Message /* implements Playable */ {
   start(DOM) {
     this.doStop = false;
     DOM.stats.hide();
+
     const messagePlayer = (index) => {
-      if (this.doStop)
-        return;
       if (index < this.messages.length) {
         setTimeout(() => {
+          if (this.doStop)
+            return;
+
           if (this.doType) {
             // Hide all the children elements, showing them one-by-one.
             DOM.call.html(this.messages[index]).children('.type').hide();
             const children = DOM.call.children('.type');
+
             const childrenPlayer = (childIndex) => {
-              if (this.doStop)
-                return;
               if (childIndex < children.length) {
                 let text = children.eq(childIndex).html();
-                // This is really jank and unfortunate because the
-                // typist library does not handle typing HTML out.
-                text = text.replace('&gt;', '>').replace('&lt;', '<');
                 children.eq(childIndex).html('').show()
                   .on('end_type.typist', () => {
                     children.eq(childIndex).off('end_type.typist');
@@ -144,7 +142,7 @@ class Message /* implements Playable */ {
               } else {
                 messagePlayer(index + 1);
               }
-            }
+            };
 
             // Recursively type children.
             childrenPlayer(0);
@@ -166,7 +164,6 @@ class Message /* implements Playable */ {
 }
 
 class Game /* implements Playable */ {
-  // TODO: Consider adding flicker color to the parameter list.
   constructor(time, speed, reset, probMSE, flickerTime, flickerDelay,
     flickerSpread) {
     this.time = time;
@@ -303,6 +300,7 @@ class Player {
       .css({ color: 'white' })
       .hide();
 
+    // Jank non-functional code that we have to specify class names...
     this.DOM.document.on('click', '.previous', () => this.previous(true));
     this.DOM.document.on('click', '.next', () => this.next(true));
 
@@ -423,6 +421,34 @@ $(document).ready(() => {
     });
   }
 
+  let soundLoaded = false;
+  const processSoundLoaded = (force) => {
+    if (!force && !soundLoaded) return;
+    soundLoaded = true;
+    $('.load')
+      .click(() => sound.play('seamless'))
+      .attr('href', 'javascript: void(0);')
+      .removeClass('load')
+      .addClass('next');
+  };
+
+  const sound = new Howl({
+    src: ['assets/audio/ambient.mp3'],
+    html5: true,
+    volume: 1.0,
+    onload: () => processSoundLoaded(true),
+    sprite: { seamless: [3000, 154000, true] }
+  });
+
+  // Call loadedSound when we navigate back.
+  $('body').on('DOMNodeInserted', (e) => {
+    if ($(e.target).hasClass('load'))
+      processSoundLoaded();
+  });
+
+  // Option to start playing without sound.
+  $(document).on('click', '.quiet', () => sound.stop());
+
   const DOM = {
     document: $(document),
     road: new Road(canvas, context),
@@ -438,7 +464,7 @@ $(document).ready(() => {
   resizeCanvas(); // Once on load.
   DOM.road.move(0.0);
 
-  // TODO: Optimize this based on whether people use it.
+  // TODO: Maybe edit this if there is something better.
   const tweetContent = "https://drowse.ml: A matter of life or death.";
 
   new Player([
@@ -446,7 +472,7 @@ $(document).ready(() => {
       '<a href="javascript: void(0);" class="next button quiet">' +
         'Start' +
       '</a> or ' +
-      '<a href="javascript: void(0);" class="next button sound">' +
+      '<a class="load button sound">' +
         'Start With Sound' +
       '</a>'
     ], 0, false, 0),
@@ -593,8 +619,11 @@ $(document).ready(() => {
         '" onclick="window.open(this.href, \'twitter\', ' +
         '\'left=20,top=20,width=600,height=300,toolbar=0,resizable=1\'); ' +
         'return false;" class="button" target="_blank">' +
-        'Tweet this.' +
-      '</span>'
+        'Tweet This' +
+      '</a> or ' +
+      '<a href="credits.txt" class="button" target="_blank">' +
+        'View Credits' +
+      '</a>'
     ], 1500, true, 16)
   ], DOM).start();
 });
