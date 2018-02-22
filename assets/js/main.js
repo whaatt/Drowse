@@ -127,7 +127,10 @@ class Message /* implements Playable */ {
               if (this.doStop)
                 return;
               if (childIndex < children.length) {
-                const text = children.eq(childIndex).html();
+                let text = children.eq(childIndex).html();
+                // This is really jank and unfortunate because the
+                // typist library does not handle typing HTML out.
+                text = text.replace('&gt;', '>').replace('&lt;', '<');
                 children.eq(childIndex).html('').show()
                   .on('end_type.typist', () => {
                     children.eq(childIndex).off('end_type.typist');
@@ -219,7 +222,8 @@ class Game /* implements Playable */ {
               clearTimeout(this.flickerLoop);
               const delay = this.flickerDelay
                 + Math.random() * 2 * this.flickerSpread - this.flickerSpread;
-              DOM.road.flickerRandom('rgba(150, 0, 0, 0.4)', this.flickerTime);
+              const neonOrange = 'rgba(255, 48, 48, 0.8)';
+              DOM.road.flickerRandom(neonOrange, this.flickerTime);
               this.flickerLoop = setTimeout(flicker, delay);
               ++flickers;
             };
@@ -246,10 +250,10 @@ class Game /* implements Playable */ {
             const error = +(Math.abs(hits * 1.0 / flickers - 1.0) * 100)
               .toFixed(2);
             DOM.call.html('There were <span class="actual">' +
-                          flickers.toString() + '</span> color changes. ' +
-                          'Your error rate was <span class="yours">' + error +
+                          flickers.toString() + '</span> changes. Your ' +
+                          'mistake rate was <span class="yours">' + error +
                           '%</span>. <a href="javascript: void(0);" ' +
-                          'class="next">Continue.</a>');
+                          'class="next button">Continue.</a></span>');
           }
         } else {
           // Countdown in center area.
@@ -338,6 +342,7 @@ class Player {
           .css({ color: '#333333' });
       if (this.index < this.playables.length - 1)
         this.DOM.greater
+          .off('click')
           .on('click', () => this.next(true))
           .attr('disabled', false)
           .css({ color: 'white' });
@@ -353,6 +358,7 @@ class Player {
       ++this.index;
       if (this.index > 0)
         this.DOM.less
+          .off('click')
           .on('click', () => this.previous(true))
           .attr('disabled', false)
           .css({ color: 'white' });
@@ -432,18 +438,163 @@ $(document).ready(() => {
   resizeCanvas(); // Once on load.
   DOM.road.move(0.0);
 
+  // TODO: Optimize this based on whether people use it.
+  const tweetContent = "https://drowse.ml: A matter of life or death.";
+
   new Player([
     new Message([
-      '<a href="javascript: void(0);" class="next">Click to start.</a>'
+      '<a href="javascript: void(0);" class="next button quiet">' +
+        'Start' +
+      '</a> or ' +
+      '<a href="javascript: void(0);" class="next button sound">' +
+        'Start With Sound' +
+      '</a>'
     ], 0, false, 0),
-    new Game(20, 30.0, 0.0, 0.1, 250, 550, 200),
     new Message([
       '<span class="type">' +
-        'Every year, millions of people die from drowsy driving.' +
+        'Commercial drivers make an average of 160 decisions per mile.' +
       '</span>',
       '<span class="type">' +
-        'Don\'t become yet another fatal statistic. Get some sleep.' +
+        'Now it\'s your turn...' +
+      '</span>',
+      '<span class="type">' +
+        'Your car will move when you press Continue.' +
+      '</span>',
+      '<span class="type">' +
+        'Click the screen every time a road line ' +
+      '</span>' +
+      '<span class="type actual">' +
+        'changes ' +
+      '</span>' +
+      '<span class="type yours">' +
+        'color' +
+      '</span>' +
+      '<span class="type">' +
+        '.' +
+      '</span>',
+      '<span class="type">' +
+        'You can also hit the spacebar.' +
+      '</span>',
+      '<a href="javascript: void(0);" class="next button">' +
+        'Continue.' +
       '</span>'
-    ], 1000, true, 8)
+    ], 1500, true, 16),
+    new Game(10, 30.0, 0.0, 0.0, 250, 550, 200),
+    new Message([
+      '<span class="type">' +
+        'Pretty easy, right?' +
+      '</span>',
+      '<span class="type">' +
+        'With enough concentration, driving isn\'t hard.' +
+      '</span>',
+      '<span class="type">' +
+        'We do it every day.' +
+      '</span>',
+      '<span class="type">' +
+        'But some days, we stay up later than usual...' +
+      '</span>',
+      '<span class="type">' +
+        'And the next morning, we feel a little ' +
+      '</span>' +
+      '<a href="javascript: void(0);" class="next type button">' +
+        'drowsier' +
+      '</a>' +
+      '<span class="type">' +
+        ' than usual...' +
+      '</span>'
+    ], 1500, true, 16),
+    new Game(10, 30.0, 0.0, 0.13, 250, 550, 200),
+    new Message([
+      '<span class="type">' +
+        'You just microslept.' +
+      '</span>',
+      '<span class="type">' +
+        'Microsleeps are caused by sleep deprivation...' +
+      '</span>',
+      '<span class="type">' +
+        '...and last anywhere from 1 to 30 seconds.' +
+      '</span>',
+      '<span class="type">' +
+        'You might not even realize it.' +
+      '</span>',
+      '<span class="type">' +
+        'But what you see here is precisely what happens.' +
+      '</span>',
+      '<span class="type">' +
+        'Now add some ' +
+      '</span>' +
+      '<a href="javascript: void(0);" class="next type button">' +
+        'speed' +
+      '</a>' +
+      '<span class="type">' +
+        ' into the mix.' +
+      '</span>'
+    ], 1500, true, 16),
+    new Game(10, 60.0, 0.0, 0.13, 250, 400, 200),
+    new Message([
+      '<span class="type">' +
+        '2.5% of fatal crashes in the US involve drowsy driving.' +
+      '</span>',
+      '<span class="type">' +
+        'That\'s 800 deaths, not to mention the 44000 other injuries.' +
+      '</span>',
+      '<span class="type">' +
+        'And it\'s all completely preventable.' +
+      '</span>',
+      '<span class="type">' +
+        'The science is clear.' +
+      '</span>',
+      '<span class="type">' +
+        'Accidents happen with a microsleep probability as low as 10%.' +
+      '</span>',
+      '<span class="type">' +
+        'If you\'re really sleepy, that can climb to over 50%.' +
+      '</span>',
+      '<span class="type">' +
+        'And then accidents become a certainty.' +
+      '</span>',
+      '<span class="type">' +
+        'Give ' +
+      '</span>' +
+      '<a href="javascript: void(0);" class="next type button">' +
+        'THAT' +
+      '</a>' +
+      '<span class="type">' +
+        ' a shot...' +
+      '</span>'
+    ], 1500, true, 16),
+    new Game(10, 60.0, 0.0, 0.9, 250, 400, 200),
+    new Message([
+      '<span class="type">' +
+        'So here\'s the deal.' +
+      '</span>',
+      '<span class="type">' +
+        'Drowsy driving is drunk driving.' +
+      '</span>',
+      '<span class="type">' +
+        'Statistically, it might be worse.' +
+      '</span>',
+      '<span class="type">' +
+        'When you drive without sleep, you\'re putting yourself at risk.' +
+      '</span>',
+      '<span class="type">' +
+        'You\'re putting your passengers at risk.' +
+      '</span>',
+      '<span class="type">' +
+        'You\'re putting pedestrians at risk.' +
+      '</span>',
+      '<span class="type">' +
+        'You\'re putting other drivers at risk.' +
+      '</span>',
+      '<span class="type">' +
+        'Don\'t ****ing do it.' +
+      '</span>',
+      '<a href="http://twitter.com/intent/tweet?text=' + tweetContent +
+        '" onclick="window.open(this.href, \'twitter\', ' +
+        '\'left=20,top=20,width=600,height=300,toolbar=0,resizable=1\'); ' +
+        'return false;" class="button" target="_blank">' +
+        'Tweet this.' +
+      '</span>'
+    ], 1500, true, 16)
   ], DOM).start();
 });

@@ -62,14 +62,14 @@
                     return false;
                 }
 
-                if (probability > o.probability) {
-
+                if (o.probability === 0 || (probability > o.probability && $target.data("flicker").once)) {
                     setTimeout(function() {
                         flick($target);
                     }, delay);
 
                 } else {
 
+                    $target.data("flicker").once = true;
                     $target.animate({ opacity: flash }, transition)
                            .delay(delay)
                            .animate({ opacity: 1 }, transition, function() {
@@ -84,6 +84,7 @@
             stop: function() {
                 this.each(function() {
                     $(this).data("flicker").active = false;
+                    $(this).data("flicker").once = undefined;
                 });
             }
 

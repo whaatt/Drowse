@@ -44,8 +44,17 @@ a {
   text-decoration: none;
 }
 
-.next {
+.button {
+  border-radius: 25px;
+  border: 2px solid #73AD21;
+  background-color: rgba(213, 230, 188, 0.1);
+  padding-left: 1vh;
+  padding-right: 1vh;
   color: lightgreen;
+}
+
+.button:hover {
+  background-color: rgba(213, 230, 188, 0.2);
 }
 
 .actual {
@@ -54,4 +63,8 @@ a {
 
 .yours {
   color: violet;
+}
+
+.red {
+  color: ;
 }
