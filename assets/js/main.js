@@ -3,7 +3,7 @@ class RoadLine {
   constructor(position) {
     this.position = position;
     this.length = 2.0 + this.position / 100.0 * 16;
-    this.color = 'rgba(255, 255, 0, 0.3)';
+    this.color = 'rgba(255, 255, 0, 0.4)';
   }
 
   advance(alpha) {
@@ -219,7 +219,7 @@ class Game /* implements Playable */ {
               clearTimeout(this.flickerLoop);
               const delay = this.flickerDelay
                 + Math.random() * 2 * this.flickerSpread - this.flickerSpread;
-              const flickerColor = 'rgba(255, 255, 255, 0.95)';
+              const flickerColor = 'white';
               DOM.road.flickerRandom(flickerColor, this.flickerTime);
               this.flickerLoop = setTimeout(flicker, delay);
               ++flickers;
@@ -487,12 +487,9 @@ $(document).ready(() => {
         'Your car will move when you press Continue.' +
       '</span>',
       '<span class="type">' +
-        'Click the screen every time a road line ' +
+        'Click the screen every time a road line changes ' +
       '</span>' +
-      '<span class="type actual">' +
-        'changes ' +
-      '</span>' +
-      '<span class="type yours">' +
+      '<span class="type effect">' +
         'color' +
       '</span>' +
       '<span class="type">' +
