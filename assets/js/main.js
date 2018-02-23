@@ -219,7 +219,7 @@ class Game /* implements Playable */ {
               clearTimeout(this.flickerLoop);
               const delay = this.flickerDelay
                 + Math.random() * 2 * this.flickerSpread - this.flickerSpread;
-              const flickerColor = 'white';
+              const flickerColor = 'rgba(0, 200, 255, 0.95)';
               DOM.road.flickerRandom(flickerColor, this.flickerTime);
               this.flickerLoop = setTimeout(flicker, delay);
               ++flickers;
