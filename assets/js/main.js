@@ -3,7 +3,7 @@ class RoadLine {
   constructor(position) {
     this.position = position;
     this.length = 2.0 + this.position / 100.0 * 16;
-    this.color = 'rgba(150, 150, 0, 0.4)';
+    this.color = 'rgba(255, 255, 0, 0.3)';
   }
 
   advance(alpha) {
@@ -66,7 +66,7 @@ class Road {
                       new RoadLine(9),
                       new RoadLine(18),
                       new RoadLine(32),
-                      new RoadLine(53),
+                      new RoadLine(52),
                       new RoadLine(79)];
 
     this.canvas = canvas;
@@ -219,8 +219,8 @@ class Game /* implements Playable */ {
               clearTimeout(this.flickerLoop);
               const delay = this.flickerDelay
                 + Math.random() * 2 * this.flickerSpread - this.flickerSpread;
-              const neonOrange = 'rgba(255, 48, 48, 0.8)';
-              DOM.road.flickerRandom(neonOrange, this.flickerTime);
+              const flickerColor = 'rgba(255, 255, 255, 0.95)';
+              DOM.road.flickerRandom(flickerColor, this.flickerTime);
               this.flickerLoop = setTimeout(flicker, delay);
               ++flickers;
             };
